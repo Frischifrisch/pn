@@ -47,8 +47,8 @@ class TestLexers(unittest.TestCase):
 			self.ed.SetKeyWords(i, keywords[i])
 
 		nameExample = os.path.join("examples", name)
-		namePrevious = nameExample +".styled"
-		nameNew = nameExample +".new"
+		namePrevious = f"{nameExample}.styled"
+		nameNew = f"{nameExample}.new"
 		with open(nameExample, "rb") as f:
 			prog = f.read()
 		BOM = b"\xEF\xBB\xBF"

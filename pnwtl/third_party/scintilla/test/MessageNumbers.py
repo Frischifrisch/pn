@@ -57,7 +57,5 @@ msgs = {
 "WM_WINDOWPOSCHANGING":70,
 }
 
-sgsm={}
-for k,v in msgs.items():
-	sgsm[v] = k
+sgsm = {v: k for k, v in msgs.items()}
 

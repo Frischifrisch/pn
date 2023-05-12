@@ -16,21 +16,21 @@ def printLexHFile(f,out):
 		v = f.features[name]
 		if v["FeatureType"] in ["val"]:
 			if Contains(name, "SCE_") or Contains(name, "SCLEX_"):
-				out.write("#define " + name + " " + v["Value"] + "\n")
+				out.write(f"#define {name} " + v["Value"] + "\n")
 
 def printHFile(f,out):
 	for name in f.order:
 		v = f.features[name]
 		if v["Category"] != "Deprecated":
 			if v["FeatureType"] in ["fun", "get", "set"]:
-				featureDefineName = "SCI_" + name.upper()
-				out.write("#define " + featureDefineName + " " + v["Value"] + "\n")
+				featureDefineName = f"SCI_{name.upper()}"
+				out.write(f"#define {featureDefineName} " + v["Value"] + "\n")
 			elif v["FeatureType"] in ["evt"]:
-				featureDefineName = "SCN_" + name.upper()
-				out.write("#define " + featureDefineName + " " + v["Value"] + "\n")
+				featureDefineName = f"SCN_{name.upper()}"
+				out.write(f"#define {featureDefineName} " + v["Value"] + "\n")
 			elif v["FeatureType"] in ["val"]:
 				if not (Contains(name, "SCE_") or Contains(name, "SCLEX_")):
-					out.write("#define " + name + " " + v["Value"] + "\n")
+					out.write(f"#define {name} " + v["Value"] + "\n")
 
 def CopyWithInsertion(input, output, genfn, definition):
 	copying = 1
@@ -45,18 +45,16 @@ def CopyWithInsertion(input, output, genfn, definition):
 			output.write(line)
 
 def contents(filename):
-	f = open(filename)
-	t = f.read()
-	f.close()
+	with open(filename) as f:
+		t = f.read()
 	return t
 
 def Regenerate(filename, genfn, definition):
 	inText = contents(filename)
 	tempname = "HFacer.tmp"
-	out = open(tempname,"w")
-	hfile = open(filename)
-	CopyWithInsertion(hfile, out, genfn, definition)
-	out.close()
+	with open(tempname,"w") as out:
+		hfile = open(filename)
+		CopyWithInsertion(hfile, out, genfn, definition)
 	hfile.close()
 	outText = contents(tempname)
 	if inText == outText:
@@ -70,6 +68,6 @@ try:
 	f.ReadFromFile("Scintilla.iface")
 	Regenerate("Scintilla.h", printHFile, f)
 	Regenerate("SciLexer.h", printLexHFile, f)
-	print("Maximum ID is %s" % max([x for x in f.values if int(x) < 3000]))
+	print(f"Maximum ID is {max(x for x in f.values if int(x) < 3000)}")
 except:
 	raise

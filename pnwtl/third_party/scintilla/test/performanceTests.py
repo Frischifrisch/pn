@@ -55,7 +55,7 @@ class TestPerformance(unittest.TestCase):
 		insert = (string.digits + "\n").encode('utf-8')
 		self.ed.AddText(len(data), data)
 		start = time.time()
-		for i in range(1000):
+		for _ in range(1000):
 			self.ed.InsertText(0, insert)
 		end = time.time()
 		duration = end - start

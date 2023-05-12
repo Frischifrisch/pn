@@ -44,15 +44,15 @@ def onCharAdded(c, doc):
 	and also calls any method registered with glue.schemes[scheme].on_char_added """
 	if not schemes.has_key(doc.CurrentScheme):
 		return
-		
+
 	scheme = schemes[doc.CurrentScheme]
-	
+
 	if scheme and scheme.on_char_added != None:
 		scheme.on_char_added(c, doc)
-		
-	if not (c == '\n' or c == '\r'):
+
+	if c not in ['\n', '\r']:
 		return
-	
+
 	if scheme and scheme.indenter != None:
 		scheme.indenter(c, doc)
 	
@@ -97,15 +97,14 @@ def startCapturingStdOut():
 def finishCapturingStdOut():
 	""" PN calls this to finish stdout capture and get the output. """
 	global oldstdout
-	
-	if (oldstdout != None):
-		ret = sys.stdout.getOutput()
-		sys.stdout = oldstdout
-		oldstdout = None
-		ret = string.rstrip(ret, "\r\n")
-		return ret
-	else:
+
+	if oldstdout is None:
 		return ""
+	ret = sys.stdout.getOutput()
+	sys.stdout = oldstdout
+	oldstdout = None
+	ret = string.rstrip(ret, "\r\n")
+	return ret
 
 def evalScript(script):
 	script = string.replace(script, "\r\n", "\n")

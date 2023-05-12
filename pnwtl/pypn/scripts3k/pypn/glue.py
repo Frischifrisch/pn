@@ -43,17 +43,17 @@ def runScript(name):
 def onCharAdded(c, doc):
 	""" Method called when a character is added, default behaviour manages calling indenters
 	and also calls any method registered with glue.schemes[scheme].on_char_added """
-	if not doc.CurrentScheme in schemes:
+	if doc.CurrentScheme not in schemes:
 		return
-		
+
 	scheme = schemes[doc.CurrentScheme]
-	
+
 	if scheme and scheme.on_char_added != None:
 		scheme.on_char_added(c, doc)
-		
-	if not (c == '\n' or c == '\r'):
+
+	if c not in ['\n', '\r']:
 		return
-	
+
 	if scheme and scheme.indenter != None:
 		scheme.indenter(c, doc)
 	
@@ -80,7 +80,7 @@ def onWriteProtectChanged(protected, doc):
 def getSchemeConfig(name):
 	""" Get a pypn scheme configuration, used to hook up indenter 
 	functions and character added handlers """
-	if not name in schemes:
+	if name not in schemes:
 		schemes[name] = SchemeMapping(name)
 	return schemes[name]
 
@@ -98,15 +98,14 @@ def startCapturingStdOut():
 def finishCapturingStdOut():
 	""" PN calls this to finish stdout capture and get the output. """
 	global oldstdout
-	
-	if (oldstdout != None):
-		ret = sys.stdout.getOutput()
-		sys.stdout = oldstdout
-		oldstdout = None
-		ret = string.rstrip(ret, "\r\n")
-		return ret
-	else:
+
+	if oldstdout is None:
 		return ""
+	ret = sys.stdout.getOutput()
+	sys.stdout = oldstdout
+	oldstdout = None
+	ret = string.rstrip(ret, "\r\n")
+	return ret
 
 def evalScript(script):
 	script = string.replace(script, "\r\n", "\n")
