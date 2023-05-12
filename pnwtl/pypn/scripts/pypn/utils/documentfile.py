@@ -15,7 +15,7 @@ class DocumentFile(object):
         """x.__init__(...) initializes x; see x.__class__.__doc__ for signature"""
         self._closed = False
         self._softspace = 0
-        if not pndoc == None:
+        if pndoc is not None:
             self.doc = pndoc
             self.__editor = scintilla.Scintilla(self.doc)
         else:

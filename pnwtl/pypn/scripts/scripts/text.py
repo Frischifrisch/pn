@@ -29,34 +29,34 @@ def SetTarget(e, x, y):
 @script("Tabs to Spaces", "Text")
 def TabsToSpaces():
 	editor = scintilla.Scintilla(pn.CurrentDoc())
-	
+
 	tabSpaces = editor.TabWidth
 	spaces = ""
-	for x in range(tabSpaces):
-		spaces = spaces + " "
-	
+	for _ in range(tabSpaces):
+		spaces = f"{spaces} "
+
 	end = editor.Length
-	
+
 	SetTarget(editor, 0, end)
 	editor.SearchFlags = 0
 	editor.BeginUndoAction()
-	
+
 	pos = editor.SearchInTarget(1, "\t")
-	
+
 	while(pos != -1):
 		l1 = editor.TargetEnd - editor.TargetStart
 		editor.ReplaceTarget(tabSpaces, spaces)
-		
+
 		# adjust doc length
 		end = end + tabSpaces - l1
 		start = pos + tabSpaces
-		
+
 		if start >= end:
 			pos = -1
 		else:
 			SetTarget(editor, start, end)
 			pos = editor.SearchInTarget(1, "\t")
-	
+
 	editor.EndUndoAction()
 
 @script("Upper case", "Text")

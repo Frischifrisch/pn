@@ -16,22 +16,22 @@ def evalCommand(text):
 	slen = len(text)
 	if slen == 0:
 		return ""
-	
+
 	if slen > 1:
 		# We're beyond single-letter commands
-		
+
 		if text[0] in ['c','d','y']:
 			return _handleChangeCommand(text[0], text[1:])
-		
+
 		# check for repeated single-letter command:
 		m = re.match("^([0-9]+)([^0-9])$", text)
 		if m != None:
-			return _handleCommand(m.group(2), int(m.group(1)))
-			
+			return _handleCommand(m[2], int(m[1]))
+
 	elif slen == 1:
 		# Try for a single-letter command
 		return _handleCommand(text, 1)
-		
+
 	return text
 
 def evalCommandEnter(text):
@@ -52,13 +52,13 @@ def evalCommandEnter(text):
 def _handleChangeCommand(command, text):
 	""" Handle the c, d and y commands """
 	m = re.match("^([0-9]+)?((i[w\\(\\[])|[w$ld]|t(.))?$", text)
-	if m == None:
+	if m is None:
 		return command + text
-	
+
 	s = scintilla.Scintilla(pn.CurrentDoc())
-	
+
 	target = _getTarget(s)
-	
+
 	try:
 		return _handleChangeCommandInner(command, text, m, s)
 	finally:
@@ -68,14 +68,12 @@ def _handleChangeCommandInner(command, text, m, s):
 	""" Do all command handling, target restoration and undo block handled externally """
 	pos = s.CurrentPos
 	end = -1
-	repetitions = 1
-	if m.group(1) != None:
-		repetitions = int(m.group(1))
+	repetitions = int(m.group(1)) if m.group(1) != None else 1
 	what = m.group(2)
 	remainder = m.group(4)
-	
+
 	# Calculate our change target:
-	if what == None:
+	if what is None:
 		return command + text
 	elif what == "w":
 		end = s.WordEndPosition(pos, True)
@@ -83,20 +81,19 @@ def _handleChangeCommandInner(command, text, m, s):
 	elif what == "$":
 		lineAtEnd = s.LineFromPosition(s.Length)
 		line = s.LineFromPosition(pos) + (repetitions - 1)
-		if line > lineAtEnd:
-			line = lineAtEnd
+		line = min(line, lineAtEnd)
 		end = s.GetLineEndPosition(line)
 	elif what == "l":
 		end = pos + repetitions
 	elif what[0] == "t":
 		end = pos
-		for x in range(0, repetitions):
+		for _ in range(0, repetitions):
 			pn.AddOutput("\nLooking for " + remainder + " at " + str(end))
 			end = _findNext(s, remainder[0], end)
 	elif what == "d":
 		startLine = s.LineFromPosition(pos)
 		pos = s.PositionFromLine(startLine)
-		
+
 		endLine = startLine + repetitions
 		if endLine >= s.LineCount:
 			endLine = s.LineCount - 1
@@ -114,23 +111,23 @@ def _handleChangeCommandInner(command, text, m, s):
 	elif what == "i[":
 		# In square braces
 		pos, end = _getBraceRange(s, '[', ']')
-	
+
 	if pos == -1 or end == -1:
 		pn.AddOutput("Failed to find the range to alter")
 		# Give up, we couldn't get a good position set.
 		return ""
-	
+
 	_setTarget(s, pos, end)
-	
+
 	if command == "d":
 		# Delete
 		s.ReplaceTarget(0, "")
 		return ""
-		
+
 	elif command == "c":
 		# Go back to the editor for overwriting the target
 		return _overwriteTargetMode(s)
-		
+
 	elif command == "y":
 		yankText = s.GetTextRange(pos, end)
 		pn.SetClipboardText(yankText)
@@ -138,7 +135,7 @@ def _handleChangeCommandInner(command, text, m, s):
 		return ""
 
 def _findFurtherWordEnds(s, pos, repetitions):
-	for x in range(0, repetitions):
+	for _ in range(0, repetitions):
 		pos = pos + 1
 		if pos > s.Length:
 			pos = s.Length
@@ -152,11 +149,7 @@ def _getBraceRange(s, startBrace, endBrace):
 	if start == -1:
 		return (-1, 0)
 	end = s.BraceMatch(start)
-	if end == -1:
-		return (0, -1)
-	
-	# start + 1 because we want the range inside the bracket, not outside
-	return (start + 1, end)
+	return (0, -1) if end == -1 else (start + 1, end)
 
 def _insertMode(s):
 	""" Put the focus back in the editor, e.g. insert mode """
@@ -202,8 +195,8 @@ def _findPrev(s, char, pos):
 def _handleCommand(text, repetitions):
 	""" Handle a simple command """
 	sci = scintilla.Scintilla(pn.CurrentDoc())
-	
-	for x in xrange(repetitions):
+
+	for _ in xrange(repetitions):
 		if text == 'j':
 			sci.LineDown()
 		elif text == 'k':
@@ -226,7 +219,7 @@ def _handleCommand(text, repetitions):
 			return _insertMode(sci)
 		else:
 			return text
-	
+
 	return ""
 
 # Hook up our handlers:

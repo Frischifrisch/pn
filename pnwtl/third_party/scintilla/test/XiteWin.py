@@ -98,9 +98,9 @@ def KeyTranslate(w):
 	elif ord("A") <= w <= ord("Z"):
 		return chr(w)
 	elif 0x70 <= w <= 0x7b:
-		return "F" + str(w-0x70+1)
+		return f"F{str(w - 112 + 1)}"
 	else:
-		return "Unknown_" + hex(w)
+		return f"Unknown_{hex(w)}"
 
 class WNDCLASS(ctypes.Structure):
 	_fields_= (\
@@ -176,7 +176,7 @@ class Scintilla:
 			if face.features[f]["FeatureType"] == "val":
 				self.k[f] = int(self.face.features[f]["Value"], 0)
 			elif face.features[f]["FeatureType"] == "evt":
-				self.k["SCN_"+f] = int(self.face.features[f]["Value"], 0)
+				self.k[f"SCN_{f}"] = int(self.face.features[f]["Value"], 0)
 		# Get the function first as that also loads the DLL
 		self.__dict__["_scifn"] = ctypes.windll.SciLexer.Scintilla_DirectFunction
 		self.__dict__["_hwnd"] = user32.CreateWindowExW(0,
@@ -191,21 +191,19 @@ class Scintilla:
 			self.used.add(name)
 			feature = self.face.features[name]
 			value = int(feature["Value"], 0)
-			#~ print("Feature", name, feature)
-			if feature["FeatureType"] == "val":
-				self.__dict__[name] = value
-				return value
-			else:
+			if feature["FeatureType"] != "val":
 				return SciCall(self._scifn, self._sciptr, value)
-		elif ("Get" + name) in self.face.features:
-			self.used.add("Get" + name)
-			feature = self.face.features["Get" + name]
+			self.__dict__[name] = value
+			return value
+		elif f"Get{name}" in self.face.features:
+			self.used.add(f"Get{name}")
+			feature = self.face.features[f"Get{name}"]
 			value = int(feature["Value"], 0)
 			if feature["FeatureType"] == "get" and \
-				not name.startswith("Get") and \
-				not feature["Param1Type"] and \
-				not feature["Param2Type"] and \
-				feature["ReturnType"] in ["bool", "int", "position"]:
+					not name.startswith("Get") and \
+					not feature["Param1Type"] and \
+					not feature["Param2Type"] and \
+					feature["ReturnType"] in ["bool", "int", "position"]:
 				#~ print("property", feature)
 				return self._scifn(self._sciptr, value, 0, 0)
 		elif name.startswith("SCN_") and name in self.k:
@@ -217,12 +215,12 @@ class Scintilla:
 				return value
 		raise AttributeError(name)
 	def __setattr__(self, name, val):
-		if ("Set" + name) in self.face.features:
-			self.used.add("Set" + name)
-			feature = self.face.features["Set" + name]
-			value = int(feature["Value"], 0)
+		if f"Set{name}" in self.face.features:
+			self.used.add(f"Set{name}")
+			feature = self.face.features[f"Set{name}"]
 			#~ print("setproperty", feature)
 			if feature["FeatureType"] == "set" and not name.startswith("Set"):
+				value = int(feature["Value"], 0)
 				if feature["Param1Type"] in ["bool", "int", "position"]:
 					return self._scifn(self._sciptr, value, val, 0)
 				elif feature["Param2Type"] in ["string"]:
@@ -267,9 +265,7 @@ class Scintilla:
 		ft.lpstrText = s
 		ft.cpMinText = 0
 		ft.cpMaxText = 0
-		pos = self.FindText(flags, ctypes.byref(ft))
-		#~ print(start, end, ft.cpMinText, ft.cpMaxText)
-		return pos
+		return self.FindText(flags, ctypes.byref(ft))
 
 	def Contents(self):
 		return self.ByteRange(0, self.Length)
@@ -294,8 +290,8 @@ class XiteWin():
 		self.wfunc = WFUNC(self.WndProc)
 		RegisterClass(self.windowName, self.wfunc)
 		user32.CreateWindowExW(0, self.windowName, self.appName, \
-			WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, \
-			0, 0, 500, 700, 0, 0, hinst, 0)
+				WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, \
+				0, 0, 500, 700, 0, 0, hinst, 0)
 
 		args = sys.argv[1:]
 		self.SetMenus()
@@ -306,8 +302,8 @@ class XiteWin():
 
 		print(self.test)
 		if self.test:
-			for k in self.cmds:
-				if self.cmds[k] == "Test":
+			for k, v in self.cmds.items():
+				if v == "Test":
 					user32.PostMessageW(self.win, msgs["WM_COMMAND"], k, 0)
 
 	def OnSize(self):
@@ -327,7 +323,7 @@ class XiteWin():
 	def WndProc(self, h, m, w, l):
 		ms = sgsm.get(m, "XXX")
 		if trace:
-			print("%s %s %s %s" % (hex(h)[2:],ms,w,l))
+			print(f"{hex(h)[2:]} {ms} {w} {l}")
 		if ms == "WM_CLOSE":
 			user32.PostQuitMessage(0)
 		elif ms == "WM_CREATE":
@@ -353,7 +349,7 @@ class XiteWin():
 
 	def Command(self, name):
 		name = name.replace(" ", "")
-		method = "Cmd" + name
+		method = f"Cmd{name}"
 		cmd = None
 		try:
 			cmd = getattr(self, method)
@@ -372,7 +368,7 @@ class XiteWin():
 		if trace:
 			print("Key:", keyName)
 		if keyName in self.keys:
-			method = "Cmd" + self.keys[keyName]
+			method = f"Cmd{self.keys[keyName]}"
 			getattr(self, method)()
 			return True
 		#~ print("UKey:", keyName)
@@ -411,10 +407,7 @@ class XiteWin():
 		if changePath or self.titleDirty != self.ed.Modify:
 			self.titleDirty = self.ed.Modify
 			self.title = self.fullPath
-			if self.titleDirty:
-				self.title += " * "
-			else:
-				self.title += " - "
+			self.title += " * " if self.titleDirty else " - "
 			self.title += self.appName
 			if self.win:
 				user32.SetWindowTextW(self.win, self.title)
@@ -547,28 +540,25 @@ class XiteWin():
 		self.fullPath = name
 		self.overrideMode = None
 		self.NewDocument()
-		fsr = open(name, "rb")
-		data = fsr.read()
-		fsr.close()
+		with open(name, "rb") as fsr:
+			data = fsr.read()
 		self.ed.AddText(len(data), data)
 		self.ed.EmptyUndoBuffer()
 		self.MoveSelection(0)
 		self.SetTitle(1)
 
 	def Save(self):
-		fos = open(self.fullPath, "wb")
-		blockSize = 1024
-		length = self.ed.Length
-		i = 0
-		while i < length:
-			grabSize = length - i
-			if grabSize > blockSize:
-				grabSize = blockSize
-			#~ print(i, grabSize, length)
-			data = self.ed.ByteRange(i, i + grabSize)
-			fos.write(data)
-			i += grabSize
-		fos.close()
+		with open(self.fullPath, "wb") as fos:
+			blockSize = 1024
+			length = self.ed.Length
+			i = 0
+			while i < length:
+				grabSize = length - i
+				grabSize = min(grabSize, blockSize)
+				#~ print(i, grabSize, length)
+				data = self.ed.ByteRange(i, i + grabSize)
+				fos.write(data)
+				i += grabSize
 		self.ed.SetSavePoint()
 		self.SetTitle(0)
 
@@ -581,7 +571,7 @@ class XiteWin():
 		self.Open()
 
 	def CmdSave(self):
-		if (self.fullPath == None) or (len(self.fullPath) == 0):
+		if self.fullPath is None or len(self.fullPath) == 0:
 			self.SaveAs()
 		else:
 			self.Save()

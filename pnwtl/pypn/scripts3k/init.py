@@ -23,22 +23,22 @@ def import_libs(dir):
     Pass in dir to scan """
     
     library_list = [] 
-    
+
     #debug.OutputDebugString(str(os.listdir(os.path.abspath(dir))))
-    for f in os.listdir(os.path.abspath(dir)):       
+    for f in os.listdir(os.path.abspath(dir)):   
         
         module_name, ext = os.path.splitext(f) # Handles no-extension files, etc.
         if ext == '.py': # Important, ignore .pyc/other files.
             try:
-                module = __import__("scripts." + module_name, globals(), locals(), [])
+                module = __import__(f"scripts.{module_name}", globals(), locals(), [])
                 #debug.OutputDebugString( 'imported module: %s' % (module_name) )
                 library_list.append(module)
             except Exception as ex:
-                pn.AddOutput("Script Import Error with " + str(module_name) + ".py: " + str(ex))
-    
+                pn.AddOutput(f"Script Import Error with {str(module_name)}.py: {str(ex)}")
+
     return library_list
 
-import_libs(pn.AppPath() + "scripts")
+import_libs(f"{pn.AppPath()}scripts")
 
 # We're done with our pypn initialization stage
 pn.initializing = False
@@ -48,30 +48,30 @@ pn.initializing = False
 ## other files.
 
 def findPrevLineLastChar(p, sci):
-	while p > 0:
-		p = p - 1
-		c = chr( sci.GetCharAt(p) )
-		
-		# Look for a non-whitespace character ending the previous line.
-		if not c in ['\n','\r','\t',' ']:
-			return c
-	return None
+    while p > 0:
+        p = p - 1
+        c = chr( sci.GetCharAt(p) )
+
+        		# Look for a non-whitespace character ending the previous line.
+        if c not in {'\n', '\r', '\t', ' '}:
+            return c
+    return None
 
 @indenter("python")
 def python_indent(c, doc):
-	sci = scintilla.Scintilla(doc)
-	if c == '\n' or c == '\r':
-		pos = sci.CurrentPos
-		line = sci.LineFromPosition( pos )
-		
-		lc = findPrevLineLastChar( pos, sci )
-		
-		# If the previous line ended with a colon, then indent
-		if lc == ':':
-			indent = sci.GetLineIndentation( line )
-			
-			# The DumbIndent system may already have indented this line...
-			previndent = sci.GetLineIndentation( line - 1 )
-			if indent == previndent or indent == 0:
-				indent += 4
-				sci.IndentLine( line, indent )
+    sci = scintilla.Scintilla(doc)
+    if c in ['\n', '\r']:
+        pos = sci.CurrentPos
+        line = sci.LineFromPosition( pos )
+
+        lc = findPrevLineLastChar( pos, sci )
+
+        		# If the previous line ended with a colon, then indent
+        if lc == ':':
+            indent = sci.GetLineIndentation( line )
+
+            # The DumbIndent system may already have indented this line...
+            previndent = sci.GetLineIndentation( line - 1 )
+            if indent in [previndent, 0]:
+                indent += 4
+                sci.IndentLine( line, indent )

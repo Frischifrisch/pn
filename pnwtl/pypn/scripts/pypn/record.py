@@ -36,9 +36,7 @@ def colourParamHandler(param):
 	return str(param)
 
 def boolParamHandler(param):
-	if param == 1:
-		return "True"
-	return "False"
+	return "True" if param == 1 else "False"
 
 def keymodParamHandler(param):
 	return ""
@@ -347,14 +345,18 @@ class Recorder:
 		if message == SCI_REPLACESEL:
 			# Text insertion
 			text = pn.StringFromPointer(lParam)
-			
+
 			# See if we need to flush the insertion buffer
-			if len(self.insertbuf) > 0 and (len(text) == 0 or ((self.insertbuf[-1] in self.lineends) and (not text[0] in self.lineends))):
+			if len(self.insertbuf) > 0 and (
+				len(text) == 0
+				or self.insertbuf[-1] in self.lineends
+				and text[0] not in self.lineends
+			):
 				self._flushbuf()
-			
+
 			# Store away the insert
 			self.insertbuf = self.insertbuf + text
-			
+
 		elif handlers.has_key(message):
 			# Other message
 			self._flushbuf()

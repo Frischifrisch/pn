@@ -24,14 +24,10 @@ def script(name=None, group="Python", auto_undo=True):
 					f()
 				finally:
 					s.EndUndoAction()
-		
-		if name == None:
-			scriptName = f.__name__
-		else:
-			scriptName = name
-		
+
+		scriptName = f.__name__ if name is None else name
 		glue.registerScript(f, group, scriptName)
-		
+
 		return wrappedScript
-		
+
 	return decorator
